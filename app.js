@@ -160,8 +160,8 @@ function startAlarm() {
 
     alarmActive = true;
 
-    // Show active alarm indicator
-    showActiveAlarm(alarmDate, sunriseStartTime);
+    // IMMEDIATELY show black screen
+    showBlackScreen(alarmDate, sunriseStartTime);
 
     // Calculate time until sunrise starts
     const timeUntilSunrise = sunriseStartTime.getTime() - now.getTime();
@@ -170,7 +170,7 @@ function startAlarm() {
         // Sunrise should already be in progress
         beginSunrise();
     } else {
-        // Wait until sunrise start time
+        // Wait until sunrise start time, then begin brightening
         alarmTimeout = setTimeout(() => {
             beginSunrise();
         }, timeUntilSunrise);
@@ -180,12 +180,59 @@ function startAlarm() {
     requestWakeLock();
 }
 
-function showActiveAlarm(alarmDate, sunriseStartTime) {
-    const activeAlarmDiv = document.getElementById('active-alarm');
-    activeAlarmDiv.classList.remove('hidden');
+// ===== SHOW BLACK SCREEN IMMEDIATELY =====
+function showBlackScreen(alarmDate, sunriseStartTime) {
+    const screen = document.getElementById('sunrise-screen');
+    screen.classList.remove('hidden');
 
-    document.getElementById('active-alarm-time').textContent = formatTimeDisplay(alarmDate);
-    document.getElementById('sunrise-start-time').textContent = formatTimeDisplay(sunriseStartTime);
+    // Reset to pure black
+    screen.style.background = '#000000';
+    document.getElementById('sun').style.background = 'rgba(0,0,0,0)';
+    document.getElementById('sun').style.boxShadow = 'none';
+    document.getElementById('sun').style.width = '80px';
+    document.getElementById('sun').style.height = '80px';
+    document.getElementById('dismiss-btn').classList.add('hidden');
+
+    // Show waiting info
+    const timeDisplay = document.getElementById('sunrise-time-display');
+    const progressText = document.getElementById('sunrise-progress-text');
+
+    timeDisplay.textContent = 'Alarm: ' + formatTimeDisplay(alarmDate);
+    progressText.textContent = 'Screen is dark. Sunrise begins at ' + formatTimeDisplay(sunriseStartTime);
+
+    // Update countdown every second while waiting
+    updateWaitingInfo(alarmDate, sunriseStartTime);
+}
+
+function updateWaitingInfo(alarmDate, sunriseStartTime) {
+    // Clear any previous waiting interval
+    if (window.waitingInterval) clearInterval(window.waitingInterval);
+
+    window.waitingInterval = setInterval(() => {
+        if (!alarmActive) {
+            clearInterval(window.waitingInterval);
+            return;
+        }
+
+        const now = Date.now();
+        const timeUntilAlarm = alarmDate.getTime() - now;
+
+        if (timeUntilAlarm <= 0) {
+            clearInterval(window.waitingInterval);
+            return;
+        }
+
+        const hoursLeft = Math.floor(timeUntilAlarm / (1000 * 60 * 60));
+        const minsLeft = Math.floor((timeUntilAlarm % (1000 * 60 * 60)) / (1000 * 60));
+
+        const progressText = document.getElementById('sunrise-progress-text');
+
+        const timeUntilSunrise = sunriseStartTime.getTime() - now;
+
+        if (timeUntilSunrise > 0) {
+            progressText.textContent = `Sunrise in ${hoursLeft}h ${minsLeft}m`;
+        }
+    }, 10000);
 }
 
 function formatTimeDisplay(date) {
@@ -213,7 +260,8 @@ function checkActiveAlarm() {
     const alarmDate = new Date(alarmInfo.alarmTime);
     const sunriseStartTime = new Date(alarmInfo.sunriseStart);
 
-    showActiveAlarm(alarmDate, sunriseStartTime);
+    // Show black screen immediately on reload
+    showBlackScreen(alarmDate, sunriseStartTime);
 
     const timeUntilSunrise = alarmInfo.sunriseStart - now;
 
@@ -232,6 +280,7 @@ function cancelAlarm() {
 
     if (alarmTimeout) clearTimeout(alarmTimeout);
     if (sunriseInterval) clearInterval(sunriseInterval);
+    if (window.waitingInterval) clearInterval(window.waitingInterval);
 
     localStorage.removeItem('activeAlarm');
 
@@ -248,6 +297,9 @@ function dismissAlarm() {
 
 // ===== SUNRISE ANIMATION =====
 function beginSunrise() {
+    // Clear waiting interval
+    if (window.waitingInterval) clearInterval(window.waitingInterval);
+
     const screen = document.getElementById('sunrise-screen');
     screen.classList.remove('hidden');
 
@@ -278,13 +330,11 @@ function beginSunrise() {
 
         // Apply progress to stages
         const stageIndex = Math.min(Math.floor(progress * (stages.length - 1)), stages.length - 1);
-        const stageProgress = (progress * (stages.length - 1)) - stageIndex;
         const currentStage = stages[stageIndex];
-        const nextStage = stages[Math.min(stageIndex + 1, stages.length - 1)];
 
         // Apply colors
         const sunEl = document.getElementById('sun');
-        const screenEl = document.getElementById('sunrise-screen');
+                const screenEl = document.getElementById('sunrise-screen');
 
         screenEl.style.background = currentStage.bg;
         sunEl.style.background = currentStage.sun;
@@ -306,6 +356,7 @@ function beginSunrise() {
         timeDisplay.textContent = currentTime.toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
+            second: '2-digit',
             hour12: true
         });
         progressText.textContent = Math.round(progress * 100) + '% brightness';
@@ -314,6 +365,7 @@ function beginSunrise() {
         if (progress >= 1) {
             clearInterval(sunriseInterval);
             document.getElementById('dismiss-btn').classList.remove('hidden');
+            progressText.textContent = '☀️ Full brightness — Good morning!';
 
             // Vibrate to alert
             if (navigator.vibrate) {
@@ -334,6 +386,15 @@ function testSunrise() {
     };
     localStorage.setItem('activeAlarm', JSON.stringify(alarmInfo));
 
+    // Show black screen then immediately start sunrise for test
+    const screen = document.getElementById('sunrise-screen');
+    screen.classList.remove('hidden');
+    screen.style.background = '#000000';
+    document.getElementById('sun').style.background = 'rgba(0,0,0,0)';
+    document.getElementById('sun').style.boxShadow = 'none';
+    document.getElementById('dismiss-btn').classList.add('hidden');
+
+    alarmActive = true;
     beginSunrise();
 }
 
