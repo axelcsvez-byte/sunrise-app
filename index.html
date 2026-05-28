@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sunrise Alarm</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌅</text></svg>">
+</head>
+<body>
+    <div id="app">
+        <!-- Sunrise Screen (fullscreen gradient) -->
+        <div id="sunrise-screen" class="hidden">
+            <div id="sun-container">
+                <div id="sun"></div>
+            </div>
+            <div id="sunrise-info">
+                <p id="sunrise-time-display"></p>
+                <p id="sunrise-progress-text"></p>
+            </div>
+            <button id="dismiss-btn" class="hidden" onclick="dismissAlarm()">☀️ I'm Awake</button>
+            <button id="cancel-sunrise-btn" onclick="cancelAlarm()">Cancel</button>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen">
+            <div class="settings-header">
+                <div class="emoji-title">🌅</div>
+                <h1>Sunrise Alarm</h1>
+                <p class="subtitle">Wake up naturally with light</p>
+            </div>
+
+            <div class="settings-card">
+                <h2>Alarm Time</h2>
+                <p class="card-desc">When should the sunrise be at full brightness?</p>
+                <input type="time" id="alarm-time" value="07:00">
+            </div>
+
+            <div class="settings-card">
+                <h2>Sunrise Duration</h2>
+                <p class="card-desc">How many minutes before the alarm should the light start?</p>
+                <div class="duration-selector">
+                    <button class="dur-btn" onclick="adjustDuration(-5)">−</button>
+                    <span id="duration-display">30</span>
+                    <span class="dur-unit">min</span>
+                    <button class="dur-btn" onclick="adjustDuration(5)">+</button>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h2>Sunrise Color</h2>
+                <p class="card-desc">Choose your sunrise style</p>
+                <div class="color-options">
+                    <button class="color-btn active" onclick="selectColor('warm')" data-color="warm">
+                        <div class="color-preview warm"></div>
+                        <span>Warm</span>
+                    </button>
+                    <button class="color-btn" onclick="selectColor('golden')" data-color="golden">
+                        <div class="color-preview golden"></div>
+                        <span>Golden</span>
+                    </button>
+                    <button class="color-btn" onclick="selectColor('cool')" data-color="cool">
+                        <div class="color-preview cool"></div>
+                        <span>Cool</span>
+                    </button>
+                    <button class="color-btn" onclick="selectColor('white')" data-color="white">
+                        <div class="color-preview white"></div>
+                        <span>White</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h2>Max Brightness</h2>
+                <p class="card-desc">How bright at peak</p>
+                <input type="range" id="brightness-slider" min="30" max="100" value="100">
+                <span id="brightness-value">100%</span>
+            </div>
+
+            <button class="start-btn" onclick="startAlarm()">Set Alarm</button>
+            <button class="test-btn" onclick="testSunrise()">▶ Test Sunrise (10 sec)</button>
+
+            <!-- Active Alarm Indicator -->
+            <div id="active-alarm" class="hidden">
+                <div class="active-alarm-card">
+                    <p>⏰ Alarm set for <span id="active-alarm-time"></span></p>
+                    <p class="alarm-sub">Sunrise starts at <span id="sunrise-start-time"></span></p>
+                    <button class="cancel-btn" onclick="cancelAlarm()">Cancel Alarm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
